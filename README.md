@@ -40,4 +40,14 @@
 
 ## Instructions
 
-**Will be released soon.**
+### Inference
+
+1. Reproduce `conda` environment using `environment.yml` in `src/track-generator` folder.
+2. Download [preprocessed demo data](https://huggingface.co/datasets/Gabrijel/what_happens_next_demo). Move this to `datasets` folder in `src/track-generator` or create a symlink.
+3. Download [pretrained model checkpoints](https://huggingface.co/Gabrijel/what-happens-next).
+4. Open one of demo notebooks (e.g. `kubric_demo.ipynb`).
+5. Adjust the `ckpts` paths in the notebook and update checkpoint paths in `configs`. 
+6. Adjust DINO path in the notebook.
+6. Run the notebook. The notebook will run sampling and should reproduce `demos` folder.
+
+**Training instructions will be released soon.**
