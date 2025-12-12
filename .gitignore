@@ -1,0 +1,112 @@
+# =========================================
+# Python
+# =========================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+ENV/
+
+# Byte-compiled / optimized / DLL files
+*.so
+*.dll
+*.dylib
+
+# Cython and build artifacts
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# =========================================
+# PyTorch
+# =========================================
+# Model checkpoints, training runs, and logs
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.onnx
+*.t7
+
+# TensorBoard logs and outputs
+runs/
+logs/
+lightning_logs/
+
+# Distributed training artifacts
+*.rank
+*.shard
+*.tar
+*.npz
+
+# =========================================
+# Jupyter / IPython
+# =========================================
+.ipynb_checkpoints/
+*.ipynb_out/
+
+# =========================================
+# Data / Datasets
+# =========================================
+data/
+datasets/
+*.csv
+*.tsv
+*.jsonl
+*.zip
+*.tar
+*.tar.gz
+*.webm
+*.mp4
+*.avi
+*.mov
+*.npy
+*.npz
+*.pkl
+*.h5
+
+# =========================================
+# System / IDE
+# =========================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# =========================================
+# Conda / pip
+# =========================================
+conda-meta/
+*.yaml
+*.yml
+pip-wheel-metadata/
+__pypackages__/
+
+# =========================================
+# Checkpoints and experiment folders
+# =========================================
+checkpoints/
+experiments/
+outputs/
+results/
+cache/
+tmp/
+datasets/
