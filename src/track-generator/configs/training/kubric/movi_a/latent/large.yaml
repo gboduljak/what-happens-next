@@ -1,0 +1,68 @@
+model:
+  name: latte(L, stride=${model.nn.trajectory_stride}, patch_size=${model.nn.patch_size}, latte_vae, sparse)
+  nn:
+    image_size: 256
+    input_size: 16
+    in_channels: 8
+    trajectory_length: 24
+    patch_size: 1
+    trajectory_stride: 8
+  flow_matcher: target_conditional_flow_matcher
+  vae: 
+    type: latte
+    ckpt: "/work/gabrijel/what-happnes-next-checkpoints/track-vae/kubric/370.pth"
+    scale: [2.0153, 1.5368, 0.9964, 1.0505, 0.8528, 1.9742, 1.9267, 1.6548]
+  
+training:
+  # 8088 examples in total, 8088 // 4 = 2022 per gpu, 2022 / 4 = 253 steps
+  batch_size: 4  # effective batch size is 4 (batch_size) * 4 (world_size) * 2 (gradient accumulation) = 32
+  num_workers: 2
+  lr: 0.00006
+  seed: 42
+  use_amp: true
+  use_wandb: true
+  epochs: 4096
+  num_steps_per_epoch: 506
+  log_every_steps: 2
+  checkpoint_every_epochs: 10
+  sample_every_steps: 506  # sample every 1 epochs, 1 * 506 = 506
+  num_trajectories_per_reference_frame: 1024
+  samples_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/samples/train
+  checkpoints_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/checkpoints
+  lr_scheduler: linear
+  warmup_steps: 3238 # 1.25% epochs = 6.4 epochs * 506 = 1998 steps
+  gradient_accumulation_steps: 2
+  sampling:
+    type: none
+    num_trajectories: 1024
+  clip_grad_norm: 1.0
+
+  
+sampling:
+  num_trajectories_per_reference_frame: 1024
+  num_samples: 4
+  sampling_trajectory_lengths:
+    - 24
+  method: euler
+  steps: 10
+  rtol: 1.0e-05
+  atol: 1.0e-05
+  seed: 42
+
+evaluation:
+  samples_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/samples/validation
+
+dataset:
+  name: kubric_dense(movi_a)
+  path: /scratch/shared/beegfs/gabrijel/datasets/sharded/kubric_dense_full
+  image_size: ${model.nn.image_size}
+  cache: false
+
+preprocessing:
+  max_width: ${model.nn.image_size}
+  max_height: ${model.nn.image_size}
+  pixel_mean: [0.4375, 0.4345, 0.4278]
+  pixel_std: [0.0728, 0.0711, 0.0801]
+  time:
+    - forward
+  starting_frame: 0

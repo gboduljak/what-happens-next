@@ -1,0 +1,77 @@
+model:
+  name: latte(B, stride=${model.nn.trajectory_stride}, patch_size=${model.nn.patch_size}, latte_vae, 205, optimized)
+  nn:
+    image_size: 128
+    input_size: 16
+    in_channels: 8
+    trajectory_length: 16
+    patch_size: 1
+    trajectory_stride: 1
+    frame_features_dim: 1024
+    text_embed_dim: 768
+    num_frame_tokens: 81
+    latent: True
+  flow_matcher: target_conditional_flow_matcher
+  vae: 
+    type: latte
+    ckpt: "/work/gabrijel/what-happnes-next-checkpoints/track-vae/atm_libero_grid_tramoe/205.pth"
+    scale: [1.2902071, 1.9394214 , 1.9453552, 1.562121, 2.2335691, 1.0033306, 0.8569633, 0.73737895]
+    
+training:
+  # 57339 examples in total, 57339 // 2 = 28,669.5 per gpu, 28,669.5 // 32 = 895.921875
+  batch_size: 32  # effective batch size is 32 (batch_size) * 2 (world_size) * 1 (gradient accumulation) = 64
+  num_workers: 4
+  lr: 0.00006
+  seed: 42
+  use_amp: true
+  use_wandb: true
+  epochs: 2048
+  num_steps_per_epoch: 896
+  log_every_steps: 64
+  checkpoint_every_epochs: 10
+  sample_every_steps: 8960  # sample every 10 epochs, 8960
+  num_trajectories_per_reference_frame: 4096
+  samples_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/samples/train
+  checkpoints_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/checkpoints
+  lr_scheduler: linear
+  warmup_steps: 1792
+  gradient_accumulation_steps: 1
+  sampling:
+    type: none
+    num_trajectories: 4096
+  clip_grad_norm: 1.0
+  restart_from_ckpt: "/scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/checkpoints/ckpt_current.pth"
+  log_to_existing_wandb_run: true
+  should_restore_optimizer: true
+  compile: true
+  precomputed_latents: true
+  
+sampling:
+  num_trajectories_per_reference_frame: 4096
+  num_samples: 4
+  sampling_trajectory_lengths:
+    - 16
+  method: euler
+  steps: 10
+  rtol: 1.0e-05
+  atol: 1.0e-05
+  seed: 42
+
+evaluation:
+  samples_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/samples/validation
+
+dataset:
+  name: libero(tra-moe)
+  path:
+    - /scratch/shared/beegfs/gabrijel/datasets/sharded/atm_libero_grid_tra-moe/
+  image_size: ${model.nn.image_size}
+  cache: false
+
+preprocessing:
+  max_width: ${model.nn.image_size}
+  max_height: ${model.nn.image_size}
+  pixel_mean: [0.4375, 0.4345, 0.4278]
+  pixel_std: [0.0728, 0.0711, 0.0801]
+  time:
+    - forward
+  starting_frame: 0

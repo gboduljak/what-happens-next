@@ -1,0 +1,71 @@
+model:
+  name: latte(B, stride=${model.nn.trajectory_stride}, patch_size=${model.nn.patch_size}, raw)
+  nn:
+    image_size: 128
+    input_size:
+      - 32
+      - 58
+    in_channels: 2
+    trajectory_length: 30
+    patch_size: 2
+    trajectory_stride: 2
+    frame_features_dim: 1024
+    num_frame_tokens: 594
+    latent: False
+  flow_matcher: target_conditional_flow_matcher
+
+training:
+  camera_probability: 0.5
+  # 46029 examples in total, 9252 // 8 = 1156.5 per gpu, 1156.5 // 4 = 579
+  batch_size: 4  # effective batch size is 4 (batch_size) * 8 (world_size) * 2 (gradient accumulation) = 64
+  num_workers: 4
+  lr: 0.00006
+  seed: 42
+  use_amp: true
+  use_wandb: true
+  compile: true
+  precomputed_latents: true
+  epochs: 8192
+  num_steps_per_epoch: 290
+  log_every_steps: 32
+  checkpoint_every_epochs: 10
+  sample_every_steps: 2900  # sample every 10 epochs, 8960
+  num_trajectories_per_reference_frame: 7424
+  samples_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/samples/train
+  checkpoints_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/checkpoints
+  lr_scheduler: linear
+  warmup_steps: 580
+  gradient_accumulation_steps: 1
+  sampling:
+    type: none
+    num_trajectories: 4096
+  clip_grad_norm: 1.0
+
+sampling:
+  num_trajectories_per_reference_frame: 7424
+  num_samples: 4
+  sampling_trajectory_lengths:
+    - 30
+  method: euler
+  steps: 10
+  rtol: 1.0e-05
+  atol: 1.0e-05
+  seed: 42
+
+evaluation:
+  samples_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/samples/validation
+
+dataset:
+  name: phys101
+  path: "/scratch/shared/beegfs/gabrijel/datasets/sharded/physics101_precomputed_latents"
+  image_size: ${model.nn.image_size}
+  cache: false
+
+preprocessing:
+  max_width: ${model.nn.image_size}
+  max_height: ${model.nn.image_size}
+  pixel_mean: [0.4375, 0.4345, 0.4278]
+  pixel_std: [0.0728, 0.0711, 0.0801]
+  time:
+    - forward
+  starting_frame: 0

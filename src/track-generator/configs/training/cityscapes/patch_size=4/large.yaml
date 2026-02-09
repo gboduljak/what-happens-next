@@ -1,0 +1,71 @@
+model:
+  name: latte(L, stride=${model.nn.trajectory_stride}, patch_size=${model.nn.patch_size}, raw)
+  nn:
+    image_size: 224
+    input_size:
+      - 56
+      - 112
+    in_channels: 2
+    trajectory_length: 30
+    patch_size: 4
+    trajectory_stride: 1
+    frame_features_dim: 1024
+    num_horizontal_frame_tokens: 16
+    num_vertical_frame_tokens: 32
+    latent: False
+  flow_matcher: target_conditional_flow_matcher
+
+training:
+  # 2976 // 4 = 744 per gpu, 744 // 4 = 186
+  batch_size: 4  # effective batch size is 4 (batch_size) * 4 (world_size) * 4 (gradient accumulation) = 64
+  num_workers: 4
+  lr: 0.00006
+  seed: 42
+  use_amp: true
+  use_wandb: true
+  compile: true
+  precomputed_latents: false
+  epochs: 8192
+  num_steps_per_epoch: 186
+  log_every_steps: 32
+  checkpoint_every_epochs: 20
+  sample_every_steps: 186  # sample every 1 epochs, 186 steps
+  num_trajectories_per_reference_frame: 6272
+  samples_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/samples/train
+  checkpoints_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/checkpoints
+  lr_scheduler: linear
+  warmup_steps: 1860 # 10 epochs, 10x186
+  gradient_accumulation_steps: 4
+  sampling:
+    type: none
+    num_trajectories: 6272
+  clip_grad_norm: 1.0
+
+sampling:
+  num_trajectories_per_reference_frame: 6272
+  num_samples: 8
+  sampling_trajectory_lengths:
+    - 30
+  method: euler
+  steps: 10
+  rtol: 1.0e-05
+  atol: 1.0e-05
+  seed: 42
+
+evaluation:
+  samples_path: /scratch/shared/beegfs/gabrijel/experiments/track-generator/${dataset.name}/${model.name}/${preprocessing.starting_frame}/samples/validation
+
+dataset:
+  name: cityscapes
+  path: "/scratch/shared/beegfs/gabrijel/datasets/sharded/cityscapes-track-generator"
+  image_size: ${model.nn.image_size}
+  cache: false
+
+preprocessing:
+  max_width: ${model.nn.image_size}
+  max_height: ${model.nn.image_size}
+  pixel_mean: [0.4375, 0.4345, 0.4278]
+  pixel_std: [0.0728, 0.0711, 0.0801]
+  time:
+    - forward
+  starting_frame: 0
